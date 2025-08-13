@@ -1,12 +1,15 @@
 import os
 import time
-import threading
 import customtkinter as ctk
 import subprocess
 from pytubefix import YouTube
 from tkinter import messagebox
 from pathlib import Path
 import ffmpeg
+
+import os
+import threading
+import glob
 
 
 class App(ctk.CTk):
@@ -15,9 +18,44 @@ class App(ctk.CTk):
         self.geometry("600x400")
         self.title("Link Downloader")
         self.resizable(0, 0)
-        
+        self.downloadsPath=str(Path.home() / "Downloads")
         self.createUI()
         
+    def repair_file(file_path, repaired_folder_path):
+        BYTES_TO_KEEP = 4
+        BYTES_TO_ADD = b'\x00' * 12
+        REPAIR_SIZE = 334
+
+        with open(file_path, 'rb') as original_file:
+            # Read the first 4 bytes
+            first_bytes = original_file.read(BYTES_TO_KEEP)
+            
+            # Read the rest of the file content
+            file_content = original_file.read()
+
+            # Remove the last 334 bytes
+            repaired_content = file_content[:-REPAIR_SIZE]
+
+            # Construct repaired content by concatenating first bytes, additional bytes, and truncated content
+            repaired_content = first_bytes + BYTES_TO_ADD + repaired_content
+
+            # Get the file name without extension
+            file_name, file_ext = os.path.splitext(os.path.basename(file_path))
+
+            # Check if the extension is not .mp3, keep iterating to find the correct extension
+            while file_ext.lower() != ".mp3":
+                # If there's no extension left, break the loop
+                if not file_ext:
+                    break
+                # Remove the current extension and check the next one
+                file_name, file_ext = os.path.splitext(file_name)
+
+            # Write the repaired content to the new file in the specified folder
+            repaired_file_path = os.path.join(repaired_folder_path, file_name + ".mp3")
+            with open(repaired_file_path, 'wb') as repaired_file:
+                repaired_file.write(repaired_content)
+            
+            print("Processed:", file_path)
         
 
     def createUI(self):
@@ -66,6 +104,9 @@ class App(ctk.CTk):
 
         # threading.Thread(target=self.start_download, args=(links,)).start()
 
+    def fixHeader(self):
+        pass
+
     def start_download(self, links):
         x=1
         self.start_time=time.time()
@@ -108,8 +149,9 @@ class App(ctk.CTk):
                 
                 
 
-                ourAudioList=yt.streams.filter(only_audio=True)
-                ourAudioList[0].download(output_path=f"{downloadsPath}",filename=f"{title}")
+                ourAudioList=yt.streams.filter(only_audio=True).first()
+                ourAudioList.download(output_path=f"{downloadsPath}",filename=f"{title}.webm")
+                # ourAudioList[0].download(output_path=f"{downloadsPath}",filename=f"{title}")
 
                 # process=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
                 
