@@ -49,7 +49,7 @@ class App(ctk.CTk):
     def start_download(self, links):
         x=1
         for link in links:
-            self.log_to_console(f"STATUS: Starting link {x} of {len(links)}.")
+            self.log_to_console(f"STATUS: Starting download {x} of {len(links)}.")
             try:
                 # self.log_to_console("Initializing download...")
                 downloads_path=str(Path.home() / "Downloads")
@@ -61,6 +61,30 @@ class App(ctk.CTk):
 
                 yt = YouTube(f'{link}')
                 title=yt.title
+                length=yt.length
+
+                lengthdy=int(length/86400)
+                lengthhr=int(int(length-int(lengthdy*86400))/3600)
+                lengthmin=int(int(length-int(lengthdy*86400)-int(lengthhr*3600))/60)
+                lengthsec=int(length-int(lengthdy*86400)-int(lengthhr*3600)-int(lengthmin*60)) #Works:|
+
+                if len(str(lengthsec)) == 1:
+                    lengthsec=f"0{lengthsec}"
+                elif len(str(lengthsec)) == 2:
+                    lengthsec=f"{lengthsec}"
+                else:
+                    lengthsec=f"00" #Works:|
+
+                self.log_to_console(f"STATUS: \tTitle: {title}")
+
+                if lengthdy == 0:
+                    self.log_to_console(f"\t \tLength: {lengthhr}:{lengthmin}:{lengthsec}")
+                else:
+                    self.log_to_console(f"\t \tLength: {lengthdy}Days {lengthhr}Hours {lengthmin}Minutes {lengthsec}Secods")
+
+                
+                
+
                 ourAudioList=yt.streams.filter(only_audio=True).all()
                 ourAudioList[0].download(output_path=f"{downloads_path}",filename=f"{title}")
 
