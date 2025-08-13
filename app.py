@@ -3,9 +3,11 @@ import time
 import threading
 import customtkinter as ctk
 import subprocess
-from pytube import YouTube
+from pytubefix import YouTube
 from tkinter import messagebox
 from pathlib import Path
+import ffmpeg
+
 
 class App(ctk.CTk):
     def __init__(self):
@@ -14,11 +16,11 @@ class App(ctk.CTk):
         self.title("Link Downloader")
         self.resizable(0, 0)
         
-        self.entryPoint()
+        self.createUI()
         
         
 
-    def entryPoint(self):
+    def createUI(self):
         self.columnconfigure(0,weight=1)
         self.rowconfigure(1,weight=1)
 
@@ -37,29 +39,50 @@ class App(ctk.CTk):
         self.console.see("end")
 
     def download_audio(self):
-        print("Hello World!")
         link=self.link_entry.get().strip()
         links=link.split(" ")
         if not links:
             self.log_to_console("ERROR: Please enter a YouTube link.")
             return
+        self.start_time=0
+        self.start_download(links)
+        #execution should wait for download completion here!!
+        elapsedTime=int(time.time()-self.start_time)
+        
+        lengthdy=int(elapsedTime/86400)
+        lengthhr=int(int(elapsedTime-int(lengthdy*86400))/3600)
+        lengthmin=int(int(elapsedTime-int(lengthdy*86400)-int(lengthhr*3600))/60)
+        lengthsec=int(elapsedTime-int(lengthdy*86400)-int(lengthhr*3600)-int(lengthmin*60))
 
-        threading.Thread(target=self.start_download, args=(links,)).start()
+
+        if elapsedTime > 86399: #You never know
+            self.log_to_console(f"Download Time: {lengthdy}Days {lengthhr}Hours {lengthmin}Minutes {lengthsec}Seconds.")
+        elif elapsedTime > 3599:
+            self.log_to_console(f"Download Time: {lengthhr}Hours {lengthmin}Minutes {lengthsec}Seconds.")
+        elif elapsedTime > 59:
+            self.log_to_console(f"Download Time: {lengthmin}Minutes {lengthsec}Seconds.")
+        else:
+            self.log_to_console(f"Download Time: {lengthsec}Seconds.")
+
+        # threading.Thread(target=self.start_download, args=(links,)).start()
 
     def start_download(self, links):
         x=1
+        self.start_time=time.time()
+        print(links)
         for link in links:
             self.log_to_console(f"STATUS: Starting download {x} of {len(links)}.")
             try:
                 # self.log_to_console("Initializing download...")
-                downloads_path=str(Path.home() / "Downloads")
-                command=[
-                    "yt-dlp", "-x", "--audio-format", "mp3",
-                    "--ffmpeg-location", "c:/Users/<username>/ffmpeg-full_build/bin",
-                    "-o", f"{downloads_path}/%(title)s.%(ext)s", link,
-                ]
+                downloadsPath=str(Path.home() / "Downloads")
+                # command=[
+                #     "yt-dlp", "-x", "--audio-format", "mp3",
+                #     "--ffmpeg-location", "c:/Users/<username>/ffmpeg-full_build/bin",
+                #     "-o", f"{downloadsPath}/%(title)s.%(ext)s", link,
+                # ]
 
-                yt = YouTube(f'{link}')
+                yt = YouTube(url=f"{link}")
+                # print(yt)
                 title=yt.title
                 length=yt.length
 
@@ -68,46 +91,46 @@ class App(ctk.CTk):
                 lengthmin=int(int(length-int(lengthdy*86400)-int(lengthhr*3600))/60)
                 lengthsec=int(length-int(lengthdy*86400)-int(lengthhr*3600)-int(lengthmin*60)) #Works:|
 
-                if len(str(lengthsec)) == 1:
+                if lengthsec <= 9:
                     lengthsec=f"0{lengthsec}"
-                elif len(str(lengthsec)) == 2:
+                elif lengthsec > 9:
                     lengthsec=f"{lengthsec}"
                 else:
                     lengthsec=f"00" #Works:|
 
-                self.log_to_console(f"STATUS: \tTitle: {title}")
+                self.log_to_console(f"\tTitle: {title}")
 
                 if lengthdy == 0:
-                    self.log_to_console(f"\t \tLength: {lengthhr}:{lengthmin}:{lengthsec}")
+                    self.log_to_console(f"\tLength: {lengthhr}:{lengthmin}:{lengthsec}.")
                 else:
-                    self.log_to_console(f"\t \tLength: {lengthdy}Days {lengthhr}Hours {lengthmin}Minutes {lengthsec}Secods")
+                    self.log_to_console(f"\tLength: {lengthdy}Days {lengthhr}Hours {lengthmin}Minutes {lengthsec}Seconds.")
 
                 
                 
 
-                ourAudioList=yt.streams.filter(only_audio=True).all()
-                ourAudioList[0].download(output_path=f"{downloads_path}",filename=f"{title}")
+                ourAudioList=yt.streams.filter(only_audio=True)
+                ourAudioList[0].download(output_path=f"{downloadsPath}",filename=f"{title}")
 
-                process=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
-                start_time=time.time()
+                # process=subprocess.Popen(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+                
 
-                for line in process.stdout:
-                    if "downloaded" in line.lower():
-                        self.log_to_console(line.strip())
-                    elif "speed" in line.lower():
-                        self.log_to_console(line.strip())
+                # for line in process.stdout:
+                #     if "downloaded" in line.lower():
+                #         self.log_to_console(line.strip())
+                #     elif "speed" in line.lower():
+                #         self.log_to_console(line.strip())
 
-                process.wait()
-                elapsed_time=time.time()-start_time
+                # process.wait()
+                
 
-                if process.returncode==0:
-                    self.log_to_console(f"COMPLETED! Total time: {elapsed_time:.2f} seconds.")
-                else:
-                    self.log_to_console("Error: Download failed.")
+                # if process.returncode==0:
+                #     self.log_to_console(f"COMPLETED! Total time: {elapsed_time:.2f} seconds.")
+                # else:
+                #     self.log_to_console("Error: Download failed.")
 
             except Exception as e:
-                self.log_to_console(f"Exception: {e}")
-            x=+1
+                self.log_to_console(f"Exception: {e}\n")
+            x+=1
 
 if __name__=="__main__":
     app=App()
