@@ -1,17 +1,21 @@
 import os
 import time
 import ffmpeg
-import threading
+# import threading
 from pathlib import Path
 import customtkinter as ctk
 from pytubefix import YouTube
+# from PIL import ImageTk, Image
 
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.geometry("600x400")
         self.title("Youtube Audio Downloader")
-        self.configure(fg_color="#101010")
+        # image = Image.open("thisIcon.png")
+        # iconpath = ImageTk.PhotoImage(image)
+        # self.wm_iconphoto(True,iconpath)
+        self.configure(bg_color="#101010",fg_color="#101010")
         self.downloadsPath=str(Path.home() / "Downloads")
         self.createUI()
 
@@ -90,12 +94,14 @@ class App(ctk.CTk):
 
             #Youtube Object.
             thisVideo=YouTube(url=f"{link}")
+            thisVideoTitle=thisVideo.title
+            thisVideoTime=thisVideo.time
             
             #Formatting the audio's length:- for logging only.
-            timeDay=int(thisVideo.time/86400)
-            timeHour=int(int(thisVideo.time-int(timeDay*86400))/3600)
-            timeMin=int(int(thisVideo.time-int(timeDay*86400)-int(timeHour*3600))/60)
-            timeSec=int(thisVideo.time-int(timeDay*86400)-int(timeHour*3600)-int(timeMin*60)) #Works:|
+            timeDay=int(thisVideoTime/86400)
+            timeHour=int(int(thisVideoTime-int(timeDay*86400))/3600)
+            timeMin=int(int(thisVideoTime-int(timeDay*86400)-int(timeHour*3600))/60)
+            timeSec=int(thisVideoTime-int(timeDay*86400)-int(timeHour*3600)-int(timeMin*60)) #Works:|
 
             #Formatting the stream's time time, fallback to `00`.
             if timeSec <= 9:
@@ -107,15 +113,15 @@ class App(ctk.CTk):
             
             #Log misc details of the stream.
             if timeDay == 0:
-                self.log_to_console(f"\tTitle: {thisVideo.title} \nLength: {timeHour}:{timeMin}:{timeSec}.")
+                self.log_to_console(f"\tTitle: {thisVideoTitle} \nLength: {timeHour}:{timeMin}:{timeSec}.")
             else:
-                self.log_to_console(f"\tTitle: {thisVideo.title} \nLength: {timeDay}Days {timeHour}Hours {timeMin}Minutes {timeSec}Seconds.")
+                self.log_to_console(f"\tTitle: {thisVideoTitle} \nLength: {timeDay}Days {timeHour}Hours {timeMin}Minutes {timeSec}Seconds.")
 
             thisStream=thisVideo.streams.filter(only_audio=True).first()
-            thisStream.download(output_path=self.downloadsPath,filename=f"{thisVideo.title}.webm") #`inputPath` depends on this line.
+            thisStream.download(output_path=self.downloadsPath,filename=f"{thisVideoTitle}.webm") #`inputPath` depends on this line.
 
-            inputPath=os.path.join(self.downloadsPath,f"{thisVideo.title}.webm") #If the program worked as intended then this path should exist. Possibility of Bug.
-            outputPath=os.path.join(self.repairsPath,f"{thisVideo.title}.mp3") #Path to final mp3 audio files.
+            inputPath=os.path.join(self.downloadsPath,f"{thisVideoTitle}.webm") #If the program worked as intended then this path should exist. Possibility of Bug.
+            outputPath=os.path.join(self.repairsPath,f"{thisVideoTitle}.mp3") #Path to final mp3 audio files.
 
             #FFMPEG converts our .webm to .mp3 at 320kbps, creating a valid ID3v2.3 tag.
             ffmpeg.input(inputPath).output(outputPath,acodec="libmp3lame",audio_bitrate="320k",write_id3v1="1",id3v2_version="3").run(quiet=True) 
@@ -135,3 +141,4 @@ class App(ctk.CTk):
 if __name__=="__main__":
     app=App()
     app.mainloop()
+    # Too Much Memory usage!!
