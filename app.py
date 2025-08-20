@@ -1,23 +1,27 @@
-import os
+import os, sys
 import time
 import ffmpeg
 # import threading
 from pathlib import Path
 import customtkinter as ctk
 from pytubefix import YouTube
-# from PIL import ImageTk, Image
+from PIL import ImageTk, Image
 
 class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         self.geometry("600x400")
         self.title("Youtube Audio Downloader")
-        # image = Image.open("thisIcon.png")
-        # iconpath = ImageTk.PhotoImage(image)
-        # self.wm_iconphoto(True,iconpath)
+        icon_path = self.resource_path("appicon.ico")
+        self.iconbitmap(icon_path)
         self.configure(bg_color="#101010",fg_color="#101010")
         self.downloadsPath=str(Path.home() / "Downloads")
         self.createUI()
+
+    def resource_path(self,relative_path):
+        if hasattr(sys, "_MEIPASS"):
+            return os.path.join(sys._MEIPASS, relative_path)
+        return os.path.join(os.path.abspath("."), relative_path)
 
     def createUI(self):
         self.columnconfigure(0,weight=1)
