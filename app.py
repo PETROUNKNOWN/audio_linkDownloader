@@ -99,7 +99,7 @@ class App(ctk.CTk):
             #Youtube Object.
             thisVideo=YouTube(url=f"{link}")
             thisVideoTitle=thisVideo.title
-            thisVideoTime=thisVideo.time
+            thisVideoTime=thisVideo.length
             
             #Formatting the audio's length:- for logging only.
             timeDay=int(thisVideoTime/86400)
